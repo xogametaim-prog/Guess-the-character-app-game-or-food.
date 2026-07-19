@@ -65,8 +65,19 @@ function getRandomItem(categoryId: string, excludeIds: string[] = []): string {
 
 // API: Create a room
 app.post("/api/rooms/create", (req, res) => {
-  const { hostName, category, language, timerDuration } = req.body;
-  const code = generateRoomCode();
+  const { hostName, category, language, timerDuration, customCode } = req.body;
+  
+  let code = "";
+  if (customCode && String(customCode).trim()) {
+    const cleanCustom = String(customCode).trim().toUpperCase();
+    if (rooms[cleanCustom]) {
+      return res.status(400).json({ success: false, message: "Room code already in use / رمز الغرفة مستخدم بالفعل" });
+    }
+    code = cleanCustom;
+  } else {
+    code = generateRoomCode();
+  }
+
   const hostId = "p_" + Math.random().toString(36).substr(2, 9);
 
   const newRoom: Room = {
@@ -95,7 +106,7 @@ app.post("/api/rooms/create", (req, res) => {
 // API: Join a room
 app.post("/api/rooms/join", (req, res) => {
   const { code, name } = req.body;
-  const cleanCode = String(code).trim();
+  const cleanCode = String(code).trim().toUpperCase();
   const room = rooms[cleanCode];
 
   if (!room) {
@@ -104,6 +115,10 @@ app.post("/api/rooms/join", (req, res) => {
 
   if (room.gameState !== "LOBBY") {
     return res.status(400).json({ success: false, message: "Game has already started / اللعبة بدأت بالفعل" });
+  }
+
+  if (room.players.length >= 10) {
+    return res.status(400).json({ success: false, message: "Room is full (Max 10 players) / الغرفة ممتلئة (الحد الأقصى 10 لاعبين)" });
   }
 
   const playerId = "p_" + Math.random().toString(36).substr(2, 9);
@@ -172,7 +187,9 @@ app.post("/api/rooms/:code/player-action", (req, res) => {
   });
 
   if (action === "correct") {
-    player.score += 1;
+    player.score += 10;
+  } else {
+    player.score = Math.max(0, player.score - 5);
   }
 
   // Get next unique random item for player

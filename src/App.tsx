@@ -24,10 +24,14 @@ import {
   Copy,
   Plus,
   Play,
-  Settings
+  Settings,
+  Sun,
+  Moon,
+  Music
 } from "lucide-react";
 import { CATEGORIES, Category, GameItem } from "./data/categories.js";
 import { TRANSLATIONS, Translations } from "./data/translations.js";
+import { AmbientSynthesizer } from "./utils/music.js";
 
 // Synthesized sound feedback engine using Web Audio API
 function playAudioTone(type: "correct" | "pass" | "countdown" | "gameover") {
@@ -88,14 +92,102 @@ type Screen =
   | "ONLINE_GAME" 
   | "SUMMARY";
 
+// Confetti simulation using pure motion.div particles
+function ConfettiOverlay() {
+  const colors = ["#FFD93D", "#FF8E9E", "#4F9DA6", "#FF5252", "#9C27B0", "#FF7043", "#3F51B5", "#009688"];
+  const particles = Array.from({ length: 45 }).map((_, i) => ({
+    id: i,
+    x: Math.random() * 100, // percentage of screen width
+    y: -20 - Math.random() * 50, // initial top offset
+    size: Math.random() * 12 + 8, // size in px
+    color: colors[Math.floor(Math.random() * colors.length)],
+    delay: Math.random() * 1.5, // staggered delays
+    duration: Math.random() * 2.5 + 2, // drop duration
+    rotate: Math.random() * 360,
+  }));
+
+  return (
+    <div className="absolute inset-0 z-50 pointer-events-none overflow-hidden">
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          initial={{ 
+            x: `${p.x}vw`, 
+            y: `${p.y}vh`, 
+            rotate: p.rotate,
+            opacity: 1 
+          }}
+          animate={{ 
+            y: "110vh", 
+            x: `${p.x + (Math.random() * 20 - 10)}vw`,
+            rotate: p.rotate + 720,
+            opacity: 0
+          }}
+          transition={{ 
+            duration: p.duration, 
+            delay: p.delay,
+            ease: "easeOut",
+            repeat: Infinity,
+            repeatDelay: Math.random() * 2
+          }}
+          style={{
+            position: "absolute",
+            width: p.size,
+            height: p.size,
+            backgroundColor: p.color,
+            borderRadius: Math.random() > 0.5 ? "50%" : "2px",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function App() {
   // Config & Localization
   const [lang, setLang] = useState<"en" | "ar">("ar"); // Default to Arabic as requested, or can toggle
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [tiltEnabled, setTiltEnabled] = useState(false); // Default false for iframe/universal compatibility
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [gameMode, setGameMode] = useState<"classic" | "timed">("classic");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
+  const [musicEnabled, setMusicEnabled] = useState(true);
+  const [hintsUsed, setHintsUsed] = useState<number>(0);
+  const [customCode, setCustomCode] = useState<string>("");
 
   const t: Translations = TRANSLATIONS[lang];
   const isRtl = lang === "ar";
+  const isDark = theme === "dark";
+
+  // Ambient Synthesizer Ref
+  const synthRef = useRef<AmbientSynthesizer | null>(null);
+
+  // Background music effect
+  useEffect(() => {
+    if (!synthRef.current) {
+      synthRef.current = new AmbientSynthesizer();
+    }
+    if (musicEnabled) {
+      synthRef.current.start();
+    } else {
+      synthRef.current.stop();
+    }
+  }, [musicEnabled]);
+
+  // Clean up synthesizer on fully unmounting
+  useEffect(() => {
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.stop();
+      }
+    };
+  }, []);
+
+  const getHintLimit = () => {
+    if (difficulty === "easy") return 3;
+    if (difficulty === "hard") return 1;
+    return 2; // medium
+  };
 
   // App Navigation Flow
   const [screen, setScreen] = useState<Screen>("HOME");
@@ -120,6 +212,13 @@ export default function App() {
   const [vRevealed, setVRevealed] = useState(false);
   const [vSecondsLeft, setVSecondsLeft] = useState(60);
   const [vHistory, setVHistory] = useState<{ p1: GameItem; p1Guessed: boolean; p2: GameItem; p2Guessed: boolean }[]>([]);
+
+  // Hints display per-card in Versus Mode
+  const [vP1HintRevealed, setVP1HintRevealed] = useState(false);
+  const [vP2HintRevealed, setVP2HintRevealed] = useState(false);
+  const [vP1HintsUsed, setVP1HintsUsed] = useState<number>(0);
+  const [vP2HintsUsed, setVP2HintsUsed] = useState<number>(0);
+  const [foreheadHintRevealed, setForeheadHintRevealed] = useState(false);
 
   // --- Online Room State ---
   const [roomCode, setRoomCode] = useState("");
@@ -213,6 +312,8 @@ export default function App() {
     setForeheadScore(0);
     setForeheadHistory([]);
     setCountdownNum(3);
+    setHintsUsed(0);
+    setForeheadHintRevealed(false);
     setScreen("FOREHEAD_COUNTDOWN");
 
     triggerAudio("countdown");
@@ -239,6 +340,7 @@ export default function App() {
   // Game timer effect
   useEffect(() => {
     if (screen !== "FOREHEAD_GAME") return;
+    if (gameMode === "classic") return; // No timer in Classic Mode
     if (secondsLeft > 0) {
       const timer = setTimeout(() => setSecondsLeft((prev) => prev - 1), 1000);
       return () => clearTimeout(timer);
@@ -247,7 +349,7 @@ export default function App() {
       triggerAudio("gameover");
       setScreen("SUMMARY");
     }
-  }, [secondsLeft, screen]);
+  }, [secondsLeft, screen, gameMode]);
 
   // Handle Forehead Tap / Tilt Action
   const handleForeheadAction = (isCorrect: boolean) => {
@@ -256,12 +358,14 @@ export default function App() {
 
     if (isCorrect) {
       triggerAudio("correct");
-      setForeheadScore((prev) => prev + 1);
+      setForeheadScore((prev) => prev + 10);
     } else {
       triggerAudio("pass");
+      setForeheadScore((prev) => Math.max(0, prev - 5));
     }
 
     setForeheadHistory((prev) => [...prev, { item: currentItem, guessed: isCorrect }]);
+    setForeheadHintRevealed(false); // Reset hint for next card
 
     if (foreheadIndex + 1 < foreheadItems.length) {
       setForeheadIndex((prev) => prev + 1);
@@ -282,12 +386,18 @@ export default function App() {
     setVRevealed(false);
     setVHistory([]);
     setVSecondsLeft(timerDuration);
+    setHintsUsed(0);
+    setVP1HintsUsed(0);
+    setVP2HintsUsed(0);
+    setVP1HintRevealed(false);
+    setVP2HintRevealed(false);
     setScreen("VERSUS_GAME");
   };
 
   // Versus mode clock
   useEffect(() => {
     if (screen !== "VERSUS_GAME" || !vRevealed) return;
+    if (gameMode === "classic") return; // No timer in Classic Mode
     if (vSecondsLeft > 0) {
       const timer = setTimeout(() => setVSecondsLeft((prev) => prev - 1), 1000);
       return () => clearTimeout(timer);
@@ -295,7 +405,7 @@ export default function App() {
       triggerAudio("gameover");
       setScreen("SUMMARY");
     }
-  }, [vSecondsLeft, screen, vRevealed]);
+  }, [vSecondsLeft, screen, vRevealed, gameMode]);
 
   // Handle Versus Action
   const handleVersusAction = (targetPlayer: 1 | 2, isCorrect: boolean) => {
@@ -304,9 +414,10 @@ export default function App() {
     if (targetPlayer === 1) {
       if (isCorrect) {
         triggerAudio("correct");
-        setVPlayer1Score((prev) => prev + 1);
+        setVPlayer1Score((prev) => prev + 10);
       } else {
         triggerAudio("pass");
+        setVPlayer1Score((prev) => Math.max(0, prev - 5));
       }
       setVHistory((prev) => [
         ...prev,
@@ -320,12 +431,14 @@ export default function App() {
       // Pick another random item not matching player 2's current item
       const nextItem = items.find((it) => it.id !== vPlayer2Item?.id) || items[0];
       setVPlayer1Item(nextItem);
+      setVP1HintRevealed(false); // Reset hint for next card
     } else {
       if (isCorrect) {
         triggerAudio("correct");
-        setVPlayer2Score((prev) => prev + 1);
+        setVPlayer2Score((prev) => prev + 10);
       } else {
         triggerAudio("pass");
+        setVPlayer2Score((prev) => Math.max(0, prev - 5));
       }
       setVHistory((prev) => [
         ...prev,
@@ -338,6 +451,7 @@ export default function App() {
       ]);
       const nextItem = items.find((it) => it.id !== vPlayer1Item?.id) || items[1];
       setVPlayer2Item(nextItem);
+      setVP2HintRevealed(false); // Reset hint for next card
     }
   };
 
@@ -532,28 +646,71 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden transition-all duration-300 text-[#2D3436] ${isRtl ? "rtl arabic-font" : "ltr"}`}>
+    <div className={`min-h-screen w-full flex flex-col items-center justify-center p-4 relative overflow-hidden transition-all duration-300 ${isDark ? "bg-[#1E1B29] text-white" : "bg-[#FFD93D] text-[#2D3436]"} ${isRtl ? "rtl arabic-font" : "ltr"}`}>
       {/* Background Ambience Pattern matching Artistic Flair */}
-      <div className="absolute inset-0 z-0 bg-[#FFD93D]"></div>
-      <div className="absolute top-0 right-0 w-64 h-64 bg-[#FF8E9E] rounded-full -mr-32 -mt-32 opacity-30 z-0 pointer-events-none"></div>
-      <div className="absolute bottom-0 left-0 w-80 h-80 bg-[#4F9DA6] rounded-full -ml-40 -mb-40 opacity-30 z-0 pointer-events-none"></div>
+      <div className={`absolute inset-0 z-0 transition-colors duration-300 ${isDark ? "bg-[#14121F]" : "bg-[#FFD93D]"}`}></div>
+      <div className={`absolute top-0 right-0 w-64 h-64 rounded-full -mr-32 -mt-32 opacity-20 z-0 pointer-events-none transition-colors duration-300 ${isDark ? "bg-[#9C27B0]" : "bg-[#FF8E9E]"}`}></div>
+      <div className={`absolute bottom-0 left-0 w-80 h-80 rounded-full -ml-40 -mb-40 opacity-20 z-0 pointer-events-none transition-colors duration-300 ${isDark ? "bg-[#00E5FF]" : "bg-[#4F9DA6]"}`}></div>
+
+      {/* Celebratory confetti overlay on game win */}
+      {screen === "SUMMARY" && (vPlayer1Item ? (vPlayer1Score !== vPlayer2Score) : (foreheadScore > 0)) && (
+        <ConfettiOverlay />
+      )}
 
       {/* Header Utilities */}
       <div className="absolute top-4 right-4 left-4 flex justify-between items-center z-20">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {/* Language Toggle Button */}
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-black bg-white text-xs font-black text-black hover:bg-gray-100 transition shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border-2 transition shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer text-xs font-black ${
+              isDark 
+                ? "bg-[#2D2A3A] border-white text-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:bg-[#3A374A]" 
+                : "bg-white border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100"
+            }`}
           >
             <Globe className="h-3.5 w-3.5 text-[#4F9DA6]" />
             <span>{t.selectLanguage}</span>
           </button>
 
+          {/* Theme Toggle Button */}
+          <button
+            onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
+            className={`p-1.5 rounded-full border-2 transition hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+              isDark 
+                ? "bg-[#2D2A3A] border-white text-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:bg-[#3A374A] active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            }`}
+            title={t.theme}
+          >
+            {isDark ? (
+              <Sun className="h-4 w-4 text-[#FFD93D]" />
+            ) : (
+              <Moon className="h-4 w-4 text-[#4F9DA6]" />
+            )}
+          </button>
+
+          {/* Music Toggle */}
+          <button
+            onClick={() => setMusicEnabled((p) => !p)}
+            className={`p-1.5 rounded-full border-2 transition hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+              isDark 
+                ? "bg-[#2D2A3A] border-white text-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:bg-[#3A374A] active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            }`}
+            title={musicEnabled ? t.musicOn : t.musicOff}
+          >
+            <Music className={`h-4 w-4 ${musicEnabled ? "text-[#4F9DA6] animate-pulse" : "text-[#FF8E9E]"}`} />
+          </button>
+
           {/* Sound Effect Toggle */}
           <button
             onClick={() => setSoundEnabled((p) => !p)}
-            className="p-2 rounded-full border-2 border-black bg-white hover:bg-gray-100 transition shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer text-black"
+            className={`p-1.5 rounded-full border-2 transition hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+              isDark 
+                ? "bg-[#2D2A3A] border-white text-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:bg-[#3A374A] active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            }`}
           >
             {soundEnabled ? (
               <Volume2 className="h-4 w-4 text-[#4F9DA6]" />
@@ -579,9 +736,13 @@ export default function App() {
                 setScreen("HOME");
               }
             }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full border-2 border-black bg-white text-xs text-black font-black hover:bg-gray-100 transition shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] cursor-pointer"
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full border-2 font-black text-xs transition hover:-translate-y-0.5 active:translate-y-0 cursor-pointer ${
+              isDark 
+                ? "bg-[#2D2A3A] border-white text-white shadow-[3px_3px_0px_0px_rgba(255,255,255,1)] hover:bg-[#3A374A] active:shadow-[1px_1px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-black text-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 active:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+            }`}
           >
-            <ArrowLeft className={`h-3.5 w-3.5 text-black ${isRtl ? "rotate-180" : ""}`} />
+            <ArrowLeft className={`h-3.5 w-3.5 ${isDark ? "text-white" : "text-black"} ${isRtl ? "rotate-180" : ""}`} />
             <span>{t.back}</span>
           </button>
         )}
@@ -597,7 +758,11 @@ export default function App() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="w-full max-w-md text-center z-10 flex flex-col items-center p-8 bg-white border-4 border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative text-[#2D3436]"
+            className={`w-full max-w-md text-center z-10 flex flex-col items-center p-8 rounded-3xl relative transition-all duration-300 ${
+              isDark 
+                ? "bg-[#252233] border-4 border-white text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-4 border-black text-[#2D3436] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+            }`}
           >
             {/* Crown decoration / Floating Emojis */}
             <div className="absolute -top-10 flex gap-4 text-3xl animate-bounce">
@@ -610,14 +775,14 @@ export default function App() {
               <Gamepad2 className="h-10 w-10 text-black" />
             </div>
 
-            <h1 className="text-4xl font-black uppercase tracking-tighter leading-none text-black font-display">
+            <h1 className={`text-4xl font-black uppercase tracking-tighter leading-none font-display ${isDark ? "text-white" : "text-black"}`}>
               {t.title}
             </h1>
-            <p className="text-base font-bold tracking-wider text-[#2D3436] opacity-70 mt-1.5">
+            <p className={`text-base font-bold tracking-wider mt-1.5 ${isDark ? "text-white/80" : "text-[#2D3436] opacity-70"}`}>
               {t.subtitle}
             </p>
 
-            <p className="text-xs font-semibold text-[#2D3436]/60 mt-4 leading-relaxed max-w-xs">
+            <p className={`text-xs font-semibold mt-4 leading-relaxed max-w-xs ${isDark ? "text-white/60" : "text-[#2D3436]/60"}`}>
               {t.tagline}
             </p>
 
@@ -625,7 +790,11 @@ export default function App() {
             <div className="w-full space-y-4 mt-8">
               <button
                 onClick={() => setScreen("OFFLINE_MODE_SELECT")}
-                className="w-full flex items-center justify-between p-4 rounded-2xl bg-[#FFD93D] border-4 border-black text-black font-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer group"
+                className={`w-full flex items-center justify-between p-4 rounded-2xl font-black transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group border-4 ${
+                  isDark
+                    ? "bg-[#FFD93D] text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#FFD93D] text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl p-2 bg-white border-2 border-black rounded-xl">📱</span>
@@ -645,7 +814,11 @@ export default function App() {
                   setOnlineJoinError("");
                   setScreen("ONLINE_SETUP");
                 }}
-                className="w-full flex items-center justify-between p-4 rounded-2xl bg-[#4F9DA6] border-4 border-black text-black font-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] cursor-pointer group"
+                className={`w-full flex items-center justify-between p-4 rounded-2xl font-black transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer group border-4 ${
+                  isDark
+                    ? "bg-[#4F9DA6] text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#4F9DA6] text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                }`}
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl p-2 bg-white border-2 border-black rounded-xl">👥</span>
@@ -663,11 +836,24 @@ export default function App() {
             {/* Quick How to Play access */}
             <button
               onClick={() => setScreen("HOW_TO_PLAY")}
-              className="mt-6 flex items-center gap-1.5 text-xs text-black font-bold underline hover:opacity-80 transition cursor-pointer"
+              className={`mt-6 flex items-center gap-1.5 text-xs font-bold underline hover:opacity-80 transition cursor-pointer ${isDark ? "text-white" : "text-black"}`}
             >
-              <Info className="h-3.5 w-3.5 text-black" />
+              <Info className="h-3.5 w-3.5" />
               <span>{t.howToPlay}</span>
             </button>
+
+            {/* Version & Team Credits Footer */}
+            <div className={`mt-8 pt-4 border-t border-dashed w-full flex flex-col items-center gap-1 ${isDark ? "border-white/10" : "border-black/10"}`}>
+              <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${isDark ? "bg-white/15 text-white/90" : "bg-black/5 text-black/70"}`}>
+                Version 1
+              </span>
+              <p className={`text-[10px] font-black tracking-wider uppercase mt-1 text-center ${isDark ? "text-white/60" : "text-black/50"}`}>
+                {t.credits}
+              </p>
+              <p className={`text-[10px] font-black uppercase tracking-wide ${isDark ? "text-[#00E5FF]" : "text-[#4F9DA6]"}`}>
+                {t.leader}
+              </p>
+            </div>
           </motion.div>
         )}
 
@@ -728,12 +914,16 @@ export default function App() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="w-full max-w-md p-8 bg-white border-4 border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-10 text-[#2D3436]"
+            className={`w-full max-w-md p-8 rounded-3xl relative transition-all duration-300 ${
+              isDark 
+                ? "bg-[#252233] border-4 border-white text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-4 border-black text-[#2D3436] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+            }`}
           >
-            <h2 className="text-2xl font-black mb-1 text-black text-center uppercase tracking-tight font-display">
+            <h2 className={`text-2xl font-black mb-1 text-center uppercase tracking-tight font-display ${isDark ? "text-white" : "text-black"}`}>
               {t.singleDeviceModes}
             </h2>
-            <p className="text-xs text-[#2D3436]/70 font-bold text-center mb-6">
+            <p className={`text-xs font-bold text-center mb-6 ${isDark ? "text-white/70" : "text-[#2D3436]/70"}`}>
               {lang === "en" ? "No internet needed, pass the phone!" : "العب محلياً بدون إنترنت على جهاز واحد!"}
             </p>
 
@@ -743,7 +933,11 @@ export default function App() {
                 onClick={() => {
                   setScreen("CATEGORY_SELECT");
                 }}
-                className="w-full p-5 rounded-2xl bg-[#FFD93D] border-4 border-black text-left rtl:text-right transition-all cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group"
+                className={`w-full p-5 rounded-2xl text-left rtl:text-right transition-all cursor-pointer border-4 group ${
+                  isDark
+                    ? "bg-[#FFD93D] text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#FFD93D] text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(2px,2px,2px,1)]"
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-3xl p-2 bg-white border-2 border-black rounded-xl group-hover:scale-110 transition duration-200">👑</span>
@@ -762,7 +956,11 @@ export default function App() {
                   // Direct to Category Select but mark for Versus mode
                   setScreen("CATEGORY_SELECT");
                 }}
-                className="w-full p-5 rounded-2xl bg-[#4F9DA6] border-4 border-black text-left rtl:text-right transition-all cursor-pointer shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] group"
+                className={`w-full p-5 rounded-2xl text-left rtl:text-right transition-all cursor-pointer border-4 group ${
+                  isDark
+                    ? "bg-[#4F9DA6] text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#4F9DA6] text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                }`}
               >
                 <div className="flex items-start gap-3">
                   <span className="text-3xl p-2 bg-white border-2 border-black rounded-xl group-hover:scale-110 transition duration-200">⚔️</span>
@@ -787,12 +985,16 @@ export default function App() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
-            className="w-full max-w-md p-8 bg-white border-4 border-black rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-10 text-[#2D3436]"
+            className={`w-full max-w-md p-8 rounded-3xl relative transition-all duration-300 ${
+              isDark 
+                ? "bg-[#252233] border-4 border-white text-white shadow-[8px_8px_0px_0px_rgba(255,255,255,1)]" 
+                : "bg-white border-4 border-black text-[#2D3436] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+            }`}
           >
-            <h2 className="text-3xl font-black mb-1 text-black text-center uppercase tracking-tight font-display">
+            <h2 className={`text-3xl font-black mb-1 text-center uppercase tracking-tight font-display ${isDark ? "text-white" : "text-black"}`}>
               {t.selectCategory}
             </h2>
-            <p className="text-xs text-[#2D3436]/70 font-bold text-center mb-6">
+            <p className={`text-xs font-bold text-center mb-6 ${isDark ? "text-white/70" : "text-[#2D3436]/70"}`}>
               {lang === "en" ? "Each category has exactly 100 high-quality cards!" : "كل قسم يحتوي على 100 بطاقة ممتازة ومنوعة!"}
             </p>
 
@@ -804,19 +1006,23 @@ export default function App() {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden ${
+                    className={`w-full flex items-center justify-between p-4 rounded-2xl cursor-pointer relative overflow-hidden transition-all duration-200 border-4 ${
                       isSelected
-                        ? "bg-[#FFD93D] border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
-                        : "bg-white border-2 border-black hover:bg-gray-50 text-[#2D3436]"
+                        ? (isDark 
+                            ? "bg-[#FFD93D] text-black border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)]" 
+                            : "bg-[#FFD93D] text-black border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]")
+                        : (isDark 
+                            ? "bg-[#2D2A3A] border-white text-white hover:bg-[#3A374A]" 
+                            : "bg-white border-black text-[#2D3436] hover:bg-gray-50")
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <span className="text-3xl p-2 bg-white border-2 border-black rounded-xl">{cat.icon}</span>
                       <div className="text-left rtl:text-right">
-                        <p className="font-black text-sm text-black uppercase">
+                        <p className={`font-black text-sm uppercase ${isSelected ? "text-black" : (isDark ? "text-white" : "text-black")}`}>
                           {lang === "en" ? cat.nameEn : cat.nameAr}
                         </p>
-                        <p className="text-[10px] text-[#2D3436]/70 font-bold">
+                        <p className={`text-[10px] font-bold ${isSelected ? "text-[#2D3436]/70" : (isDark ? "text-white/60" : "text-[#2D3436]/70")}`}>
                           {lang === "en" ? "100 unique pictures" : "١٠٠ صورة مميزة"}
                         </p>
                       </div>
@@ -831,37 +1037,108 @@ export default function App() {
               })}
             </div>
 
-            {/* Timer Selection setting */}
-            <div className="mt-6 p-4 rounded-2xl bg-[#4F9DA6]/10 border-2 border-black">
-              <label className="text-xs font-black text-black flex items-center justify-between mb-2 uppercase tracking-wide">
-                <span>⏱️ {lang === "en" ? "Round Duration" : "مدة الجولة"}</span>
-                <span className="text-black font-black text-xs">{timerDuration} {t.sec}</span>
-              </label>
-              <div className="flex gap-2">
-                {[30, 60, 90, 120].map((sec) => (
+            {/* Game Settings box */}
+            <div className={`mt-6 p-4 rounded-2xl border-2 transition-all duration-300 ${isDark ? "bg-white/5 border-white/20" : "bg-[#4F9DA6]/10 border-black"}`}>
+              {/* Game Mode */}
+              <div className="mb-4">
+                <span className={`text-xs font-black flex items-center justify-between mb-2 uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}>
+                  <span>🎮 {lang === "en" ? "Game Mode" : "نمط اللعبة"}</span>
+                  <span className="text-[10px] uppercase font-black opacity-80">{gameMode === "classic" ? (lang === "en" ? "Classic" : "كلاسيكي") : (lang === "en" ? "Timed" : "مؤقت")}</span>
+                </span>
+                <div className="flex gap-2">
                   <button
-                    key={sec}
-                    onClick={() => setTimerDuration(sec)}
+                    onClick={() => setGameMode("classic")}
                     className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border-2 ${
-                      timerDuration === sec
-                        ? "bg-black border-black text-white"
-                        : "bg-white border-black text-black hover:bg-gray-100"
+                      gameMode === "classic"
+                        ? (isDark ? "bg-white border-white text-black" : "bg-black border-black text-white")
+                        : (isDark ? "bg-transparent border-white/20 text-white hover:bg-white/10" : "bg-white border-black text-black hover:bg-gray-100")
                     }`}
                   >
-                    {sec}s
+                    {lang === "en" ? "Classic" : "كلاسيكي"}
                   </button>
-                ))}
+                  <button
+                    onClick={() => setGameMode("timed")}
+                    className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border-2 ${
+                      gameMode === "timed"
+                        ? (isDark ? "bg-white border-white text-black" : "bg-black border-black text-white")
+                        : (isDark ? "bg-transparent border-white/20 text-white hover:bg-white/10" : "bg-white border-black text-black hover:bg-gray-100")
+                    }`}
+                  >
+                    {lang === "en" ? "Timed" : "مؤقت"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Timer selection (only shown if gameMode is timed) */}
+              <AnimatePresence>
+                {gameMode === "timed" && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-4"
+                  >
+                    <label className={`text-xs font-black flex items-center justify-between mb-2 uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}>
+                      <span>⏱️ {lang === "en" ? "Round Duration" : "مدة الجولة"}</span>
+                      <span className="font-black text-xs">{timerDuration} {t.sec}</span>
+                    </label>
+                    <div className="flex gap-2">
+                      {[30, 60, 90, 120].map((sec) => (
+                        <button
+                          key={sec}
+                          onClick={() => setTimerDuration(sec)}
+                          className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border-2 ${
+                            timerDuration === sec
+                              ? (isDark ? "bg-white border-white text-black" : "bg-black border-black text-white")
+                              : (isDark ? "bg-transparent border-white/20 text-white hover:bg-white/10" : "bg-white border-black text-black hover:bg-gray-100")
+                          }`}
+                        >
+                          {sec}s
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Difficulty Selection (affects clues count) */}
+              <div className="mb-4">
+                <span className={`text-xs font-black flex items-center justify-between mb-2 uppercase tracking-wide ${isDark ? "text-white" : "text-black"}`}>
+                  <span>🧠 {lang === "en" ? "Difficulty" : "الصعوبة (التلميحات)"}</span>
+                  <span className="text-[10px] uppercase font-black opacity-80">
+                    {difficulty === "easy" && (lang === "en" ? "Easy (3 hints)" : "سهل (3 تلميحات)")}
+                    {difficulty === "medium" && (lang === "en" ? "Medium (2 hints)" : "متوسط (تلميحان)")}
+                    {difficulty === "hard" && (lang === "en" ? "Hard (1 hint)" : "صعب (تلميح واحد)")}
+                  </span>
+                </span>
+                <div className="flex gap-2">
+                  {(["easy", "medium", "hard"] as const).map((diff) => (
+                    <button
+                      key={diff}
+                      onClick={() => setDifficulty(diff)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-black transition-all cursor-pointer border-2 ${
+                        difficulty === diff
+                          ? (isDark ? "bg-white border-white text-black" : "bg-black border-black text-white")
+                          : (isDark ? "bg-transparent border-white/20 text-white hover:bg-white/10" : "bg-white border-black text-black hover:bg-gray-100")
+                      }`}
+                    >
+                      {diff === "easy" && (lang === "en" ? "Easy" : "سهل")}
+                      {diff === "medium" && (lang === "en" ? "Medium" : "متوسط")}
+                      {diff === "hard" && (lang === "en" ? "Hard" : "صعب")}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* Forehead Mode-specific: Tilt setting toggle */}
-              <div className="mt-4 flex items-center justify-between border-t-2 border-black/10 pt-3">
-                <span className="text-xs text-black font-black uppercase tracking-tight">🔄 {t.tiltCalibration}</span>
+              <div className={`flex items-center justify-between border-t-2 pt-3 ${isDark ? "border-white/10" : "border-black/10"}`}>
+                <span className={`text-xs font-black uppercase tracking-tight ${isDark ? "text-white" : "text-black"}`}>🔄 {t.tiltCalibration}</span>
                 <button
                   onClick={() => setTiltEnabled((prev) => !prev)}
                   className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer border-2 ${
                     tiltEnabled 
-                      ? "bg-black border-black text-white" 
-                      : "bg-white border-black text-black hover:bg-gray-100"
+                      ? (isDark ? "bg-white border-white text-black" : "bg-black border-black text-white")
+                      : (isDark ? "bg-transparent border-white/20 text-white hover:bg-white/10" : "bg-white border-black text-black hover:bg-gray-100")
                   }`}
                 >
                   {tiltEnabled ? t.tiltEnabled : t.tiltDisabled}
@@ -873,13 +1150,21 @@ export default function App() {
             <div className="mt-6 flex gap-3">
               <button
                 onClick={() => startForeheadGame()}
-                className="flex-1 py-3.5 bg-[#FF8E9E] border-4 border-black rounded-2xl text-black font-black text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer uppercase tracking-tight"
+                className={`flex-1 py-3.5 rounded-2xl text-black font-black text-sm transition-all cursor-pointer uppercase tracking-tight border-4 ${
+                  isDark
+                    ? "bg-[#FF8E9E] border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#FF8E9E] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                }`}
               >
                 👑 {t.foreheadMode}
               </button>
               <button
                 onClick={() => startVersusGame()}
-                className="flex-1 py-3.5 bg-[#4F9DA6] border-4 border-black rounded-2xl text-black font-black text-sm shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-0 active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all cursor-pointer uppercase tracking-tight"
+                className={`flex-1 py-3.5 rounded-2xl text-black font-black text-sm transition-all cursor-pointer uppercase tracking-tight border-4 ${
+                  isDark
+                    ? "bg-[#4F9DA6] border-white shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] hover:shadow-[6px_6px_0px_0px_rgba(255,255,255,1)] active:shadow-[2px_2px_0px_0px_rgba(255,255,255,1)]"
+                    : "bg-[#4F9DA6] border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                }`}
               >
                 ⚔️ {t.versusMode}
               </button>
@@ -977,14 +1262,42 @@ export default function App() {
                   </h2>
 
                   {/* Clue/Hint for friends */}
-                  <div className="mt-4 px-4 py-2 bg-[#FF8E9E]/15 border-2 border-black/20 rounded-xl relative z-10 max-w-xs">
-                    <p className="text-[10px] text-black font-black uppercase tracking-wider">{t.hint}</p>
-                    <p className="text-xs text-black font-bold mt-0.5">
-                      {lang === "en" 
-                        ? foreheadItems[foreheadIndex].hintEn 
-                        : foreheadItems[foreheadIndex].hintAr}
-                    </p>
-                  </div>
+                  {(() => {
+                    const foreheadHintsLeft = Math.max(0, getHintLimit() - hintsUsed);
+                    return (
+                      <div className="mt-4 relative z-10 w-full max-w-xs flex flex-col items-center">
+                        {foreheadHintRevealed ? (
+                          <div className="w-full px-4 py-2 bg-[#FF8E9E]/15 border-2 border-black rounded-xl text-center">
+                            <p className="text-[10px] text-black font-black uppercase tracking-wider">💡 {t.hintUsed}</p>
+                            <p className="text-xs text-black font-bold mt-0.5">
+                              {lang === "en" 
+                                ? foreheadItems[foreheadIndex].hintEn 
+                                : foreheadItems[foreheadIndex].hintAr}
+                            </p>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              if (foreheadHintsLeft > 0) {
+                                setHintsUsed((prev) => prev + 1);
+                                setForeheadHintRevealed(true);
+                              }
+                            }}
+                            disabled={foreheadHintsLeft <= 0}
+                            className={`w-full py-2 px-4 rounded-xl border-2 border-black text-[11px] font-black uppercase transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none ${
+                              foreheadHintsLeft > 0 
+                                ? "bg-[#FFD93D] text-black hover:bg-[#ffe169] cursor-pointer" 
+                                : "bg-gray-100 text-gray-400 border-gray-300 shadow-none cursor-not-allowed"
+                            }`}
+                          >
+                            💡 {foreheadHintsLeft > 0 
+                              ? `${t.hint} (${foreheadHintsLeft} ${lang === "en" ? "left" : "متبقي"})` 
+                              : t.noHintsLeft}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </motion.div>
               ) : (
                 <p className="text-black font-black text-2xl uppercase">{t.timesUp}</p>
@@ -1033,9 +1346,29 @@ export default function App() {
                 <span className="text-xs font-black text-black bg-[#FF8E9E] px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider">
                   {t.p1}
                 </span>
-                <span className="text-xs font-black text-black bg-white px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider">
-                  {t.score}: <span className="text-[#4F9DA6] text-sm font-black">{vPlayer1Score}</span>
-                </span>
+                <div className="flex items-center gap-2">
+                  {/* Player 1 Hint Button (Reveals hint for P1's card, which is shown on P2's screen!) */}
+                  {vRevealed && !vP1HintRevealed && (
+                    <button
+                      onClick={() => {
+                        const p1HintsLeft = Math.max(0, getHintLimit() - vP1HintsUsed);
+                        if (p1HintsLeft > 0) {
+                          setVP1HintsUsed((prev) => prev + 1);
+                          setVP1HintRevealed(true);
+                        }
+                      }}
+                      disabled={Math.max(0, getHintLimit() - vP1HintsUsed) <= 0}
+                      className="px-2.5 py-1 bg-[#FFD93D] hover:bg-[#ffe169] disabled:bg-gray-100 disabled:text-gray-400 border-2 border-black rounded-lg text-[10px] font-black uppercase transition-all shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                    >
+                      💡 {Math.max(0, getHintLimit() - vP1HintsUsed) > 0 
+                        ? `${t.hint} (${Math.max(0, getHintLimit() - vP1HintsUsed)})` 
+                        : "No hints"}
+                    </button>
+                  )}
+                  <span className="text-xs font-black text-black bg-white px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider font-mono">
+                    {t.score}: <span className="text-[#4F9DA6] text-sm font-black">{vPlayer1Score}</span>
+                  </span>
+                </div>
               </div>
 
               {/* Reveal Check */}
@@ -1054,6 +1387,13 @@ export default function App() {
                       {lang === "en" ? vPlayer2Item?.nameEn : vPlayer2Item?.nameAr}
                     </h4>
                     <p className="text-[10px] text-black/70 font-bold uppercase mt-1">{t.p2} {lang === "en" ? "card" : "بطاقة"}</p>
+                    
+                    {/* Display Player 2's hint here on Player 1's screen so Player 1 can read it */}
+                    {vP2HintRevealed && (
+                      <div className="mt-2 p-1.5 bg-[#4F9DA6]/15 border-2 border-[#4F9DA6]/30 rounded-xl">
+                        <p className="text-[10px] text-black font-bold uppercase">💡 {t.hint}: {lang === "en" ? vPlayer2Item?.hintEn : vPlayer2Item?.hintAr}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1117,9 +1457,29 @@ export default function App() {
                 <span className="text-xs font-black text-black bg-[#4F9DA6] px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider">
                   {t.p2}
                 </span>
-                <span className="text-xs font-black text-black bg-white px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider">
-                  {t.score}: <span className="text-[#4F9DA6] text-sm font-black">{vPlayer2Score}</span>
-                </span>
+                <div className="flex items-center gap-2">
+                  {/* Player 2 Hint Button (Reveals hint for P2's card, which is shown on P1's screen!) */}
+                  {vRevealed && !vP2HintRevealed && (
+                    <button
+                      onClick={() => {
+                        const p2HintsLeft = Math.max(0, getHintLimit() - vP2HintsUsed);
+                        if (p2HintsLeft > 0) {
+                          setVP2HintsUsed((prev) => prev + 1);
+                          setVP2HintRevealed(true);
+                        }
+                      }}
+                      disabled={Math.max(0, getHintLimit() - vP2HintsUsed) <= 0}
+                      className="px-2.5 py-1 bg-[#FFD93D] hover:bg-[#ffe169] disabled:bg-gray-100 disabled:text-gray-400 border-2 border-black rounded-lg text-[10px] font-black uppercase transition-all shadow-[1.5px_1.5px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none"
+                    >
+                      💡 {Math.max(0, getHintLimit() - vP2HintsUsed) > 0 
+                        ? `${t.hint} (${Math.max(0, getHintLimit() - vP2HintsUsed)})` 
+                        : "No hints"}
+                    </button>
+                  )}
+                  <span className="text-xs font-black text-black bg-white px-2.5 py-1 rounded-lg border-2 border-black uppercase tracking-wider font-mono">
+                    {t.score}: <span className="text-[#4F9DA6] text-sm font-black">{vPlayer2Score}</span>
+                  </span>
+                </div>
               </div>
 
               {/* Reveal Check */}
@@ -1138,6 +1498,13 @@ export default function App() {
                       {lang === "en" ? vPlayer1Item?.nameEn : vPlayer1Item?.nameAr}
                     </h4>
                     <p className="text-[10px] text-black/70 font-bold uppercase mt-1">{t.p1} {lang === "en" ? "card" : "بطاقة"}</p>
+                    
+                    {/* Display Player 1's hint here on Player 2's screen so Player 2 can read it */}
+                    {vP1HintRevealed && (
+                      <div className="mt-2 p-1.5 bg-[#FF8E9E]/15 border-2 border-[#FF8E9E]/30 rounded-xl">
+                        <p className="text-[10px] text-black font-bold uppercase">💡 {t.hint}: {lang === "en" ? vPlayer1Item?.hintEn : vPlayer1Item?.hintAr}</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

@@ -343,5 +343,82 @@ export const CATEGORIES: Category[] = [
       { id: "e99", nameEn: "Takoyaki", nameAr: "تاكوياكي كرات الأخطبوط", emoji: "🐙", hintEn: "Ball-shaped Japanese snack made of wheat batter and octopus", hintAr: "وجبة يابانية خفيفة دائرية من عجين القمح وقطع الأخطبوط" },
       { id: "e100", nameEn: "Miso Soup", nameAr: "شوربة ميسو يابانية", emoji: "🥣", hintEn: "Traditional Japanese broth with dashi, soy paste, tofu", hintAr: "حساء ياباني تقليدي بمرق الداشي ومعجون الصويا والتوفو" }
     ]
+  },
+  {
+    id: "arabic_characters",
+    nameEn: "Arabic Characters",
+    nameAr: "شخصيات عربية",
+    icon: "🕌",
+    color: "from-amber-500 to-yellow-600",
+    items: [
+      { id: "ac1", nameEn: "Ibn Sina", nameAr: "ابن سينا", emoji: "👨‍⚕️", hintEn: "Famous Muslim physician and father of early modern medicine", hintAr: "طبيب وفيلسوف مسلم شهير يلقب بأبي الطب الحديث" },
+      { id: "ac2", nameEn: "Al-Mutanabbi", nameAr: "المتنبي", emoji: "✍️", hintEn: "One of the greatest, most prominent poets in the Arabic language", hintAr: "شاعر يعد من أعظم شعراء العربية وأكثرهم شهرة وحكمة" },
+      { id: "ac3", nameEn: "Antarah ibn Shaddad", nameAr: "عنترة بن شداد", emoji: "⚔️", hintEn: "Pre-Islamic hero, knight and poet famous for bravery and love for Abla", hintAr: "فارس وشاعر جاهلي شهير بشجاعته وقصته مع عبلة" },
+      { id: "ac4", nameEn: "Gibran Khalil Gibran", nameAr: "جبران خليل جبران", emoji: "🖋️", hintEn: "Lebanese-American writer and artist, author of The Prophet", hintAr: "شاعر وكاتب لبناني أمريكي شهير، صاحب كتاب النبي" },
+      { id: "ac5", nameEn: "Fairuz", nameAr: "فيروز", emoji: "🎤", hintEn: "Legendary Lebanese singer, the voice of the morning", hintAr: "مطربة لبنانية أسطورية تعد سفيرتنا إلى النجوم وصوت الصباح" },
+      { id: "ac6", nameEn: "Umm Kulthum", nameAr: "أم كلثوم", emoji: "🎤", hintEn: "The Star of the East, Egypt's most famous singer", hintAr: "كوكب الشرق، أعظم وأشهر مطربة مصرية وعربية" },
+      { id: "ac7", nameEn: "Salah Al-Din Al-Ayyubi", nameAr: "صلاح الدين الأيوبي", emoji: "🛡️", hintEn: "Sultan who liberated Jerusalem and founded the Ayyubid dynasty", hintAr: "القائد المسلم الشهير الذي فتح القدس ومؤسس الدولة الأيوبية" },
+      { id: "ac8", nameEn: "Ibn Battuta", nameAr: "ابن بطوطة", emoji: "🧭", hintEn: "Legendary Moroccan explorer and traveler of the medieval world", hintAr: "رحالة ومستكشف مغربي شهير طاف أرجاء العالم القديم" },
+      { id: "ac9", nameEn: "Adel Emam", nameAr: "عادل إمام", emoji: "🎭", hintEn: "The Leader, Egypt's most legendary comedy actor", hintAr: "الزعيم، أشهر ممثل كوميدي في تاريخ السينما والمسرح العربي" },
+      { id: "ac10", nameEn: "Naguib Mahfouz", nameAr: "نجيب محفوظ", emoji: "📚", hintEn: "First Arabic writer to win the Nobel Prize in Literature", hintAr: "أول كاتب عربي يفوز بجائزة نوبل في الآداب" },
+      { id: "ac11", nameEn: "Abbas ibn Firnas", nameAr: "عباس بن فرناس", emoji: "🦅", hintEn: "Andalusian polymath who made the first scientific attempt to fly", hintAr: "عالم أندلسي قام بأول محاولة طيران علمية في التاريخ" },
+      { id: "ac12", nameEn: "Al-Khwarizmi", nameAr: "الخوارزمي", emoji: "📐", hintEn: "Father of Algebra and the creator of algorithms", hintAr: "عالم رياضيات مسلم يعد مؤسس علم الجبر ومبتكر الخوارزميات" },
+      { id: "ac13", nameEn: "Ibn al-Haytham", nameAr: "ابن الهيثم", emoji: "👁️", hintEn: "Pioneering physicist who founded modern optics and explained vision", hintAr: "عالم فيزياء رائد أسس علم البصريات الحديث وشرح آلية الإبصار" },
+      { id: "ac14", nameEn: "Ibn Khaldun", nameAr: "ابن خلدون", emoji: "📜", hintEn: "The father of sociology and author of the famous Muqaddimah", hintAr: "مؤسس علم الاجتماع ومؤلف كتاب المقدمة الشهير" },
+      { id: "ac15", nameEn: "Omar Sharif", nameAr: "عمر الشريف", emoji: "🎬", hintEn: "The legendary actor who starred in Lawrence of Arabia and Doctor Zhivago", hintAr: "نجم السينما العالمي وبطل فيلم لورنس العرب ودكتور جيفاغو" },
+      { id: "ac16", nameEn: "Ahmed Zewail", nameAr: "أحمد زويل", emoji: "🧪", hintEn: "Egyptian scientist who won the Nobel Prize for discovering the femtosecond", hintAr: "عالم كيمياء مصري فاز بجائزة نوبل لاكتشافه الفيمتو ثانية" },
+      { id: "ac17", nameEn: "Omar Al-Mukhtar", nameAr: "عمر المختار", emoji: "🦁", hintEn: "The Lion of the Desert, leader of Libyan resistance against colonizers", hintAr: "أسد الصحراء، قائد المقاومة الليبية الباسلة ضد المستعمرين" },
+      { id: "ac18", nameEn: "Tariq ibn Ziyad", nameAr: "طارق بن زياد", emoji: "⚔️", hintEn: "The Muslim commander who led the conquest of Andalusia", hintAr: "القائد الإسلامي البطل الذي قاد فتح الأندلس وعبر البحر" },
+      { id: "ac19", nameEn: "Harun al-Rashid", nameAr: "هارون الرشيد", emoji: "👑", hintEn: "The most famous Abbasid Caliph associated with One Thousand and One Nights", hintAr: "أشهر خلفاء الدولة العباسية ارتبط اسمه بقصص ألف ليلة وليلة" },
+      { id: "ac20", nameEn: "Taha Hussein", nameAr: "طه حسين", emoji: "👓", hintEn: "The Dean of Arabic Literature, blind writer of Egypt", hintAr: "عميد الأدب العربي، الكاتب المصري الملهم وصاحب رواية الأيام" },
+      { id: "ac21", nameEn: "Abdel Halim Hafez", nameAr: "عبد الحليم حافظ", emoji: "🎤", hintEn: "The Dark-skinned Nightingale, legendary emotional Arabic singer", hintAr: "العندليب الأسمر، أحد عمالقة الغناء الرومانسي العربي" },
+      { id: "ac22", nameEn: "Kadim Al Sahir", nameAr: "كاظم الساهر", emoji: "🌹", hintEn: "The Caesar of Arabic Song, legendary Iraqi singer and composer", hintAr: "قيصر الغناء العربي، الفنان والملحن العراقي القدير" },
+      { id: "ac23", nameEn: "Nizar Qabbani", nameAr: "نزار قباني", emoji: "✍️", hintEn: "The Syrian Poet of Love and Jasmine", hintAr: "شاعر الحب والياسمين السوري الشهير وصاحب القصائد الرومانسية" },
+      { id: "ac24", nameEn: "Mahmoud Darwish", nameAr: "محمود درويش", emoji: "🇵🇸", hintEn: "The Palestinian national poet who wrote deeply about homeland", hintAr: "شاعر المقاومة والوطن الفلسطيني الكبير وصاحب سجل أنا عربي" },
+      { id: "ac25", nameEn: "Ziryab", nameAr: "زرياب", emoji: "🎵", hintEn: "Andalusian musician who added the fifth string to the Oud", hintAr: "الموسيقي والمغني الأندلسي الذي أضاف الوتر الخامس للعود" },
+      { id: "ac26", nameEn: "Al-Farabi", nameAr: "الفارابي", emoji: "📜", hintEn: "The Second Teacher, famous Islamic philosopher and music theorist", hintAr: "المعلم الثاني، الفيلسوف المسلم الشهير وصاحب كتاب الموسيقى الكبير" },
+      { id: "ac27", nameEn: "Al-Jahiz", nameAr: "الجاحظ", emoji: "📚", hintEn: "The great writer of Abbasid era, author of the Book of Animals", hintAr: "أديب عباسي موسوعي بارز، صاحب كتاب البخلاء وكتاب الحيوان" },
+      { id: "ac28", nameEn: "Nabila Ebeid", nameAr: "نبيلة عبيد", emoji: "🎬", hintEn: "The Star of Egypt, iconic dramatic film actress", hintAr: "نجمة مصر الأولى، واحدة من أهم ممثلات السينما العربية" },
+      { id: "ac29", nameEn: "Ahmed Shawqi", nameAr: "أحمد شوقي", emoji: "👑", hintEn: "The Prince of Poets, great modern Egyptian poet", hintAr: "أمير الشعراء، كاتب وشاعر مصري رائد في الأدب الحديث" },
+      { id: "ac30", nameEn: "Al-Mutanabbi Poet", nameAr: "المتنبي الحكيم", emoji: "🖋️", hintEn: "The poet who said: 'The horse, the night and the desert know me'", hintAr: "الشاعر القائل: الخيل والليل والبيداء تعرفني" }
+    ]
+  },
+  {
+    id: "english_characters",
+    nameEn: "Famous Westerners",
+    nameAr: "شخصيات غربية",
+    icon: "🎩",
+    color: "from-blue-500 to-indigo-600",
+    items: [
+      { id: "ec1", nameEn: "William Shakespeare", nameAr: "ويليام شكسبير", emoji: "✍️", hintEn: "English playwright who wrote Romeo and Juliet", hintAr: "شاعر وكاتب مسرحي إنجليزي كتب مسرحية روميو وجولييت" },
+      { id: "ec2", nameEn: "Isaac Newton", nameAr: "إسحاق نيوتن", emoji: "🍎", hintEn: "Physicist who discovered gravity via a falling apple", hintAr: "عالم فيزياء اكتشف الجاذبية الأرضية بسبب سقوط التفاحة" },
+      { id: "ec3", nameEn: "Albert Einstein", nameAr: "ألبرت أينشتاين", emoji: "🧠", hintEn: "Theoretical physicist who developed the theory of relativity", hintAr: "عالم فيزياء نظرية شهير وضع نظرية النسبية العامة" },
+      { id: "ec4", nameEn: "Queen Elizabeth II", nameAr: "الملكة إليزابيث الثانية", emoji: "👑", hintEn: "Longest-reigning British monarch in history", hintAr: "ملكة بريطانيا الراحلة وصاحبة أطول فترة حكم في التاريخ البريطاني" },
+      { id: "ec5", nameEn: "Sherlock Holmes", nameAr: "شيرلوك هولمز", emoji: "🔍", hintEn: "Fictional London consulting detective created by Arthur Conan Doyle", hintAr: "محقق خيالي شهير في لندن يتميز بالذكاء الشديد والملاحظة" },
+      { id: "ec6", nameEn: "Winston Churchill", nameAr: "وينستون تشرشل", emoji: "🎩", hintEn: "Inspirational Prime Minister of the UK during World War II", hintAr: "رئيس وزراء بريطانيا الملهم خلال الحرب العالمية الثانية" },
+      { id: "ec7", nameEn: "Charles Darwin", nameAr: "تشارلز داروين", emoji: "🐒", hintEn: "Naturalist who proposed the theory of evolution", hintAr: "عالم طبيعة شهير صاحب نظرية التطور عبر الانتقاء الطبيعي" },
+      { id: "ec8", nameEn: "Stephen Hawking", nameAr: "ستيفن هوكينج", emoji: "🌌", hintEn: "Theoretical physicist who wrote A Brief History of Time", hintAr: "عالم فيزياء نظرية مشهور بدارسته للثقوب السوداء رغم مرضه" },
+      { id: "ec9", nameEn: "Princess Diana", nameAr: "الأميرة ديانا", emoji: "👸", hintEn: "The People's Princess, beloved royal and humanitarian", hintAr: "أميرة القلوب، شخصية ملكية وإنسانية محبوبة عالمياً" },
+      { id: "ec10", nameEn: "Charlie Chaplin", nameAr: "تشارلي تشابلن", emoji: "🕴️", hintEn: "Legendary star of the silent film era", hintAr: "ممثل ومخرج كوميدي أسطوري اشتهر في عهد السينما الصامتة" }
+    ]
+  },
+  {
+    id: "famous_apps",
+    nameEn: "Famous Apps",
+    nameAr: "تطبيقات مشهورة",
+    icon: "📱",
+    color: "from-green-400 to-emerald-600",
+    items: [
+      { id: "ap1", nameEn: "WhatsApp", nameAr: "واتساب", emoji: "💬", hintEn: "The green instant messaging app used worldwide", hintAr: "تطبيق المراسلة الفورية الأخضر الأشهر عالمياً" },
+      { id: "ap2", nameEn: "YouTube", nameAr: "يوتيوب", emoji: "🎥", hintEn: "Giant red video sharing and streaming platform", hintAr: "منصة مشاركة ومشاهدة الفيديوهات الحمراء العملاقة" },
+      { id: "ap3", nameEn: "TikTok", nameAr: "تيك توك", emoji: "🎵", hintEn: "Short-form video app with vertical scrolling", hintAr: "تطبيق الفيديوهات القصيرة والمقاطع الرأسية الأكثر حماساً" },
+      { id: "ap4", nameEn: "Instagram", nameAr: "إنستغرام", emoji: "📸", hintEn: "Meta's app for sharing photos, reels, and stories", hintAr: "تطبيق مشاركة الصور والقصص والمقاطع القصيرة التابع لـ Meta" },
+      { id: "ap5", nameEn: "Snapchat", nameAr: "سناب شات", emoji: "👻", hintEn: "Yellow ghost app with filters and self-disappearing photos", hintAr: "تطبيق الشبح الأصفر للمقاطع اليومية والفلاتر والصور المؤقتة" },
+      { id: "ap6", nameEn: "X / Twitter", nameAr: "إكس / تويتر", emoji: "🐦", hintEn: "Social network of microblogging, formerly with a blue bird logo", hintAr: "منصة التغريدات والمدونات المصغرة، كانت تشتهر بالطائر الأزرق" },
+      { id: "ap7", nameEn: "Facebook", nameAr: "فيسبوك", emoji: "👥", hintEn: "The largest classic social network created by Mark Zuckerberg", hintAr: "أقدم وأكبر شبكة اجتماعية كلاسيكية أسسها مارك زوكربيرغ" },
+      { id: "ap8", nameEn: "Google", nameAr: "جوجل", emoji: "🔍", hintEn: "The world's absolute entry point for search and questions", hintAr: "محرك البحث الأكبر والمدخل الرئيسي لكل الأسئلة في الإنترنت" },
+      { id: "ap9", nameEn: "Netflix", nameAr: "نتفليكس", emoji: "🍿", hintEn: "Streaming service with original movies and shows starting with an N", hintAr: "خدمة بث الأفلام والمسلسلات الأصلية الشهيرة التي تبدأ بحرف N" },
+      { id: "ap10", nameEn: "Spotify", nameAr: "سبوتيفاي", emoji: "🎵", hintEn: "Green music, podcast, and playlist streaming app", hintAr: "تطبيق بث الموسيقى والبودكاست الأخضر ذو القوائم المتنوعة" }
+    ]
   }
 ];

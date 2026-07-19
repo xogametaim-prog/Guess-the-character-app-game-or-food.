@@ -56,6 +56,27 @@ export interface Translations {
   tiltEnabled: string;
   tiltDisabled: string;
   scoreBoard: string;
+  arabicCharacters: string;
+  englishCharacters: string;
+  famousApps: string;
+  hintsLeft: string;
+  noHintsLeft: string;
+  gameMode: string;
+  classicMode: string;
+  timedMode: string;
+  difficulty: string;
+  easy: string;
+  medium: string;
+  hard: string;
+  credits: string;
+  leader: string;
+  customRoomCode: string;
+  theme: string;
+  lightTheme: string;
+  darkTheme: string;
+  musicOn: string;
+  musicOff: string;
+  hintUsed: string;
 }
 
 export const TRANSLATIONS: Record<"en" | "ar", Translations> = {
@@ -117,6 +138,27 @@ export const TRANSLATIONS: Record<"en" | "ar", Translations> = {
     tiltEnabled: "Tilt Controls Active (Tilt phone down/up)",
     tiltDisabled: "Tilt Controls Off (Tap screen to play)",
     scoreBoard: "Scoreboard",
+    arabicCharacters: "Arabic Characters 🕌",
+    englishCharacters: "Famous Westerners 🎩",
+    famousApps: "Famous Apps 📱",
+    hintsLeft: "Hints Left",
+    noHintsLeft: "No hints left!",
+    gameMode: "Game Mode",
+    classicMode: "Classic Mode",
+    timedMode: "Timed Mode",
+    difficulty: "Difficulty",
+    easy: "Easy (3 Hints)",
+    medium: "Medium (2 Hints)",
+    hard: "Hard (1 Hint)",
+    credits: "TRL TEAM FOR DEVELOPMENT",
+    leader: "Leader: TAIM",
+    customRoomCode: "Custom Code (Optional)",
+    theme: "Theme",
+    lightTheme: "Light Mode ☀️",
+    darkTheme: "Dark Mode 🌙",
+    musicOn: "Music On 🎵",
+    musicOff: "Music Off 🔇",
+    hintUsed: "Hint: ",
   },
   ar: {
     title: "تحدي احزر الصورة",
@@ -176,5 +218,26 @@ export const TRANSLATIONS: Record<"en" | "ar", Translations> = {
     tiltEnabled: "تحكم الإمالة مفعّل (أمل الهاتف لأسفل/أعلى)",
     tiltDisabled: "تحكم الإمالة مقفل (اضغط على الشاشة للعب)",
     scoreBoard: "لوحة النقاط",
+    arabicCharacters: "شخصيات عربية 🕌",
+    englishCharacters: "شخصيات غربية 🎩",
+    famousApps: "تطبيقات مشهورة 📱",
+    hintsLeft: "التلميحات المتبقية",
+    noHintsLeft: "لم يتبقى تلميحات!",
+    gameMode: "نمط اللعبة",
+    classicMode: "النمط الكلاسيكي",
+    timedMode: "النمط المؤقت",
+    difficulty: "درجة الصعوبة",
+    easy: "سهل (٣ تلميحات)",
+    medium: "متوسط (تلميحان)",
+    hard: "صعب (تلميح واحد)",
+    credits: "فريق التطوير TRL TEAM FOR DEVELOPMENT",
+    leader: "رئيس الفريق: TAIM",
+    customRoomCode: "رمز مخصص للغرفة (اختياري)",
+    theme: "المظهر",
+    lightTheme: "وضع عادي ☀️",
+    darkTheme: "وضع ليلي 🌙",
+    musicOn: "تشغيل الموسيقى 🎵",
+    musicOff: "كتم الموسيقى 🔇",
+    hintUsed: "تلميح: ",
   }
 };
