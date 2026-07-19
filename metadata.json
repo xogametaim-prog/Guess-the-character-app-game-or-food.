@@ -1,0 +1,6 @@
+{
+  "name": "Picture Guess Party",
+  "description": "A fun multiplayer and party game of guessing pictures. Support Arabic and English with over 300 items across Fruits, Candies, and Foods.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

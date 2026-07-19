@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Cairo:wght@400;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-arabic: "Cairo", sans-serif;
+}
+
+body {
+  background-color: #FFD93D;
+  color: #2D3436;
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+.arabic-font {
+  font-family: var(--font-arabic), sans-serif;
+}
+
+/* Custom Scrollbar to fit Pop Art */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: #ffffff;
+  border-left: 2px solid #000000;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: #000000;
+  border-radius: 3px;
+}
+
+/* Custom bounce / pulse effects */
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.8; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 3s infinite ease-in-out;
+}
