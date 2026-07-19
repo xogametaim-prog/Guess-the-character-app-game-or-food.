@@ -180,7 +180,7 @@ export default function App() {
   // Config & Localization
   const [lang, setLang] = useState<"en" | "ar">("ar"); // Default to Arabic as requested, or can toggle
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [tiltEnabled, setTiltEnabled] = useState(false); // Default false for iframe/universal compatibility
+  const [tiltEnabled, setTiltEnabled] = useState(true); // Default true for frictionless mobile gaming
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [gameMode, setGameMode] = useState<"classic" | "timed">("classic");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
@@ -262,6 +262,7 @@ export default function App() {
   const [onlineJoinError, setOnlineJoinError] = useState("");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
+  const [onlineForeheadOnly, setOnlineForeheadOnly] = useState(false);
 
   // Tilt orientation tracking
   const [tiltStatus, setTiltStatus] = useState<"center" | "correct" | "pass">("center");
@@ -294,7 +295,7 @@ export default function App() {
 
   // --- Tilt Control Engine ---
   useEffect(() => {
-    if (!tiltEnabled || screen !== "FOREHEAD_GAME") return;
+    if (!tiltEnabled || (screen !== "FOREHEAD_GAME" && screen !== "ONLINE_GAME")) return;
 
     let initialBeta: number | null = null;
 
@@ -320,7 +321,11 @@ export default function App() {
         setTiltStatus("correct");
         lastTiltTime.current = now;
         setTimeout(() => {
-          handleForeheadAction(true);
+          if (screen === "FOREHEAD_GAME") {
+            handleForeheadAction(true);
+          } else if (screen === "ONLINE_GAME" && playerId) {
+            handleOnlinePlayerAction(playerId, "correct");
+          }
           setTiltStatus("center");
         }, 500);
       } else if (diff < -35 || beta < 55) {
@@ -328,7 +333,11 @@ export default function App() {
         setTiltStatus("pass");
         lastTiltTime.current = now;
         setTimeout(() => {
-          handleForeheadAction(false);
+          if (screen === "FOREHEAD_GAME") {
+            handleForeheadAction(false);
+          } else if (screen === "ONLINE_GAME" && playerId) {
+            handleOnlinePlayerAction(playerId, "pass");
+          }
           setTiltStatus("center");
         }, 500);
       }
@@ -338,7 +347,7 @@ export default function App() {
     return () => {
       window.removeEventListener("deviceorientation", handleOrientation);
     };
-  }, [tiltEnabled, screen, foreheadIndex, foreheadItems]);
+  }, [tiltEnabled, screen, foreheadIndex, foreheadItems, playerId, roomCode]);
 
   // --- Offline: Start Forehead Countdown ---
   const startForeheadGame = () => {
@@ -1908,6 +1917,17 @@ export default function App() {
             exit={{ opacity: 0 }}
             className="absolute inset-0 w-full h-full flex flex-col justify-between p-4 bg-[#FFD93D] z-30 border-[12px] border-white text-[#2D3436]"
           >
+            {/* Visual indicator of tilt state */}
+            {tiltStatus !== "center" && (
+              <div className={`absolute inset-0 z-50 flex items-center justify-center transition-all border-[12px] border-white ${
+                tiltStatus === "correct" ? "bg-[#4F9DA6]/95" : "bg-[#FF8E9E]/95"
+              }`}>
+                <span className="text-black text-5xl md:text-6xl font-black uppercase tracking-widest animate-bounce text-center">
+                  {tiltStatus === "correct" ? t.correct : t.pass}
+                </span>
+              </div>
+            )}
+
             {/* Top Stat Bar */}
             <div className="flex justify-between items-center bg-white p-3.5 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-black font-black">
               <div className="flex items-center gap-2">
@@ -1930,75 +1950,194 @@ export default function App() {
               </button>
             </div>
 
-            {/* Split Screen layout of game board */}
-            <div className="flex-1 w-full my-4 flex flex-col lg:flex-row gap-4 overflow-y-auto custom-scroll">
-              
-              {/* My active card - The card I hold (Placed on my forehead/under chin facing outward) */}
-              <div className="flex-1 flex flex-col items-center justify-center p-4 bg-white border-4 border-black rounded-3xl relative overflow-hidden text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+            {/* Interactive Control Panel - Mode & Tilt Switcher */}
+            <div className="flex flex-col sm:flex-row gap-2 justify-center mt-3 mb-1">
+              <button
+                onClick={() => setOnlineForeheadOnly((prev) => !prev)}
+                className={`px-3 py-1.5 rounded-xl text-[10px] md:text-xs font-black border-2 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 ${
+                  onlineForeheadOnly 
+                    ? "bg-[#4F9DA6] text-black border-black" 
+                    : "bg-white text-black border-black hover:bg-gray-50"
+                }`}
+              >
+                <span>🎭</span>
+                <span>
+                  {lang === "en" 
+                    ? (onlineForeheadOnly ? "Switch to Split Screen View" : "Fullscreen Forehead Screen (For local play)") 
+                    : (onlineForeheadOnly ? "التحويل للوحة القيادة المشتركة" : "شاشة كاملة للجبهة (للعب معاً بنفس الغرفة)")
+                  }
+                </span>
+              </button>
+
+              <button
+                onClick={() => setTiltEnabled((prev) => !prev)}
+                className={`px-3 py-1.5 rounded-xl text-[10px] md:text-xs font-black border-2 transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none cursor-pointer flex items-center justify-center gap-1.5 ${
+                  tiltEnabled 
+                    ? "bg-black text-white border-black" 
+                    : "bg-white/40 text-black/60 border-black/30"
+                }`}
+              >
+                <span>{tiltEnabled ? "🔄" : "📴"}</span>
+                <span>
+                  {lang === "en"
+                    ? (tiltEnabled ? "Tilt Sensor Active" : "Tilt Sensor Off (Tap to play)")
+                    : (tiltEnabled ? "حساس الإمالة مفعّل (أمل هاتفك)" : "حساس الإمالة معطل (اضغط للعب)")
+                  }
+                </span>
+              </button>
+            </div>
+
+            {/* Main Game Screen Board Layout */}
+            {onlineForeheadOnly ? (
+              /* FULLSCREEN FOREHEAD CARD VIEW - Tailored for holding on forehead/under chin */
+              <div className="flex-1 w-full my-2 flex flex-col items-center justify-center p-6 bg-white border-4 border-black rounded-[32px] relative overflow-hidden text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                 {(() => {
                   const myPlayerObj = roomState.players.find((p: any) => p.id === playerId);
                   return (
-                    <div className="absolute top-3 left-3 bg-[#FF8E9E] px-2.5 py-0.5 rounded-md border-2 border-black text-[9px] font-black uppercase text-black flex items-center gap-1.5 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
-                      <span className="text-xs">{myPlayerObj?.avatar || "👤"}</span>
-                      <span>{lang === "en" ? "Your Card" : "بطاقتك الحالية"}</span>
+                    <div className="absolute top-4 left-4 bg-[#FF8E9E] px-3 py-1 rounded-lg border-2 border-black text-xs font-black uppercase text-black flex items-center gap-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                      <span className="text-sm">{myPlayerObj?.avatar || "👤"}</span>
+                      <span>{lang === "en" ? "Your Forehead Card" : "بطاقة جبهتك الحالية"}</span>
                     </div>
                   );
                 })()}
 
                 {/* Hold device instruction */}
-                <p className="text-[10px] text-black font-black max-w-xs mb-3 uppercase tracking-wider animate-pulse-slow">
-                  👉 {t.howToPlayForehead}
+                <p className="text-xs text-black font-black max-w-sm mb-6 uppercase tracking-wider animate-pulse-slow">
+                  👉 {lang === "en" 
+                    ? "Hold phone at your forehead or chin facing your friends!" 
+                    : "ضع الهاتف عند جبهتك أو ذقنك موجهاً الشاشة لأصدقائك!"
+                  }
                 </p>
 
-                {/* Display my assigned item in giant size facing others */}
+                {/* Display my assigned item in extra giant size facing outward */}
                 {(() => {
                   const myPlayerObj = roomState.players.find((p: any) => p.id === playerId);
                   const myItem = activeCategory.items.find((it) => it.id === myPlayerObj?.currentItemId);
 
-                  if (!myItem) return <div className="text-xs font-black text-black/50 uppercase tracking-widest">Assigning card...</div>;
+                  if (!myItem) return <div className="text-lg font-black text-black/50 uppercase tracking-widest">Assigning card...</div>;
 
                   return (
                     <motion.div 
                       key={myItem.id}
-                      initial={{ scale: 0.95 }}
+                      initial={{ scale: 0.9 }}
                       animate={{ scale: 1 }}
-                      className="flex flex-col items-center"
+                      className="flex flex-col items-center my-4"
                     >
                       {myItem.imageUrl ? (
                         <img 
                           src={myItem.imageUrl}
                           alt={lang === "en" ? myItem.nameEn : myItem.nameAr}
                           referrerPolicy="no-referrer"
-                          className="w-24 h-24 md:w-28 md:h-28 object-cover rounded-xl border-2 border-black mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          className="w-36 h-36 md:w-44 md:h-44 object-cover rounded-2xl border-4 border-black mb-4 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                         />
                       ) : (
-                        <span className="text-8xl md:text-9xl my-2 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                        <span className="text-9xl md:text-[140px] my-3 filter drop-shadow-[6px_6px_0px_rgba(0,0,0,0.15)]">
                           {myItem.emoji}
                         </span>
                       )}
-                      <h2 className="text-4xl md:text-5xl font-black text-black tracking-tight uppercase">
+                      <h2 className="text-5xl md:text-7xl font-black text-black tracking-tight uppercase leading-none mt-2">
                         {lang === "en" ? myItem.nameEn : myItem.nameAr}
                       </h2>
                     </motion.div>
                   );
                 })()}
 
-                {/* Self mark controls if they don't have other people marking them */}
-                <div className="mt-6 flex gap-2 w-full max-w-xs z-10">
+                {/* Helper info on tilt controls */}
+                {tiltEnabled && (
+                  <p className="text-[10px] text-[#4F9DA6] font-black uppercase mt-3 tracking-wide">
+                    🔄 {lang === "en" 
+                      ? "Tilt DOWN for Correct • Tilt UP to Skip/Pass" 
+                      : "أمل الهاتف لأسفل للصح ✅ • أمل الهاتف لأعلى للتجاوز ❌"
+                    }
+                  </p>
+                )}
+
+                {/* Self mark manual backup buttons */}
+                <div className="mt-8 flex gap-4 w-full max-w-sm z-10">
                   <button
                     onClick={() => handleOnlinePlayerAction(playerId, "pass")}
-                    className="flex-1 py-1.5 rounded-lg bg-[#FF8E9E] border-2 border-black text-black text-xs font-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
+                    className="flex-1 py-3 rounded-2xl bg-[#FF8E9E] border-4 border-black text-black text-sm font-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
                   >
                     {t.pass}
                   </button>
                   <button
                     onClick={() => handleOnlinePlayerAction(playerId, "correct")}
-                    className="flex-1 py-1.5 rounded-lg bg-[#4F9DA6] border-2 border-black text-black text-xs font-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
+                    className="flex-1 py-3 rounded-2xl bg-[#4F9DA6] border-4 border-black text-black text-sm font-black transition-all shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
                   >
                     {t.correct}
                   </button>
                 </div>
               </div>
+            ) : (
+              /* SPLIT SCREEN LAYOUT - Perfect for remote play or cooperative view */
+              <div className="flex-1 w-full my-4 flex flex-col lg:flex-row gap-4 overflow-y-auto custom-scroll">
+                
+                {/* My active card - The card I hold (Placed on my forehead/under chin facing outward) */}
+                <div className="flex-1 flex flex-col items-center justify-center p-4 bg-white border-4 border-black rounded-3xl relative overflow-hidden text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+                  {(() => {
+                    const myPlayerObj = roomState.players.find((p: any) => p.id === playerId);
+                    return (
+                      <div className="absolute top-3 left-3 bg-[#FF8E9E] px-2.5 py-0.5 rounded-md border-2 border-black text-[9px] font-black uppercase text-black flex items-center gap-1.5 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                        <span className="text-xs">{myPlayerObj?.avatar || "👤"}</span>
+                        <span>{lang === "en" ? "Your Card" : "بطاقتك الحالية"}</span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Hold device instruction */}
+                  <p className="text-[10px] text-black font-black max-w-xs mb-3 uppercase tracking-wider animate-pulse-slow">
+                    👉 {t.howToPlayForehead}
+                  </p>
+
+                  {/* Display my assigned item in giant size facing others */}
+                  {(() => {
+                    const myPlayerObj = roomState.players.find((p: any) => p.id === playerId);
+                    const myItem = activeCategory.items.find((it) => it.id === myPlayerObj?.currentItemId);
+
+                    if (!myItem) return <div className="text-xs font-black text-black/50 uppercase tracking-widest">Assigning card...</div>;
+
+                    return (
+                      <motion.div 
+                        key={myItem.id}
+                        initial={{ scale: 0.95 }}
+                        animate={{ scale: 1 }}
+                        className="flex flex-col items-center"
+                      >
+                        {myItem.imageUrl ? (
+                          <img 
+                            src={myItem.imageUrl}
+                            alt={lang === "en" ? myItem.nameEn : myItem.nameAr}
+                            referrerPolicy="no-referrer"
+                            className="w-24 h-24 md:w-28 md:h-28 object-cover rounded-xl border-2 border-black mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          />
+                        ) : (
+                          <span className="text-8xl md:text-9xl my-2 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                            {myItem.emoji}
+                          </span>
+                        )}
+                        <h2 className="text-4xl md:text-5xl font-black text-black tracking-tight uppercase">
+                          {lang === "en" ? myItem.nameEn : myItem.nameAr}
+                        </h2>
+                      </motion.div>
+                    );
+                  })()}
+
+                  {/* Self mark controls if they don't have other people marking them */}
+                  <div className="mt-6 flex gap-2 w-full max-w-xs z-10">
+                    <button
+                      onClick={() => handleOnlinePlayerAction(playerId, "pass")}
+                      className="flex-1 py-1.5 rounded-lg bg-[#FF8E9E] border-2 border-black text-black text-xs font-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
+                    >
+                      {t.pass}
+                    </button>
+                    <button
+                      onClick={() => handleOnlinePlayerAction(playerId, "correct")}
+                      className="flex-1 py-1.5 rounded-lg bg-[#4F9DA6] border-2 border-black text-black text-xs font-black transition-all shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-0.5 active:shadow-none uppercase cursor-pointer"
+                    >
+                      {t.correct}
+                    </button>
+                  </div>
+                </div>
 
               {/* Clue Giver Dashboard - Interactive panel to view OTHER players' cards and vote for them */}
               <div className="flex-1 p-4 bg-white border-4 border-black rounded-3xl flex flex-col justify-start shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] text-[#2D3436]">
@@ -2079,9 +2218,9 @@ export default function App() {
                   )}
                 </div>
               </div>
-
             </div>
-          </motion.div>
+          )}
+        </motion.div>
         )}
 
         {/* ======================================================== */}
