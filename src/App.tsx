@@ -171,6 +171,11 @@ function ConfettiOverlay() {
   );
 }
 
+const AVATARS = [
+  "👑", "🐱", "🐶", "🦊", "🦁", "🐼", "🐨", "🐯", "🐵", "🦄", 
+  "🐙", "🦖", "🤠", "😎", "👾", "🤖", "🧙‍♂️", "👩‍🚀", "🍕", "🍔"
+];
+
 export default function App() {
   // Config & Localization
   const [lang, setLang] = useState<"en" | "ar">("ar"); // Default to Arabic as requested, or can toggle
@@ -251,6 +256,7 @@ export default function App() {
   // --- Online Room State ---
   const [roomCode, setRoomCode] = useState("");
   const [playerName, setPlayerName] = useState("");
+  const [selectedAvatar, setSelectedAvatar] = useState("👑");
   const [playerId, setPlayerId] = useState("");
   const [roomState, setRoomState] = useState<any>(null);
   const [onlineJoinError, setOnlineJoinError] = useState("");
@@ -502,6 +508,7 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hostName: playerName,
+          avatar: selectedAvatar,
           category: selectedCategory,
           language: lang,
           timerDuration,
@@ -543,6 +550,7 @@ export default function App() {
         body: JSON.stringify({
           code: roomCode,
           name: playerName,
+          avatar: selectedAvatar,
         }),
       });
       const data = await res.json();
@@ -1631,6 +1639,31 @@ export default function App() {
                 />
               </div>
 
+              {/* Avatar Selection Grid */}
+              <div>
+                <label className="block text-xs font-black text-black mb-1.5 uppercase tracking-wide">
+                  🎭 {lang === "en" ? "Choose Profile Avatar" : "اختر صورة الحساب"}
+                </label>
+                <div className="flex gap-2 overflow-x-auto py-2 px-1 border-2 border-black rounded-xl bg-gray-50 max-w-full">
+                  {AVATARS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => {
+                        setSelectedAvatar(emoji);
+                        triggerAudio("hint");
+                      }}
+                      className={`text-2xl p-1.5 rounded-lg border-2 transition-all shrink-0 cursor-pointer ${
+                        selectedAvatar === emoji
+                          ? "bg-[#FFD93D] border-black scale-110 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                          : "bg-white border-transparent hover:border-black/30"
+                      }`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Box splitting Create vs Join */}
               <div className="grid grid-cols-1 gap-4 pt-4 border-t-2 border-black/10">
                 {/* HOST: Create a Room */}
@@ -1829,8 +1862,10 @@ export default function App() {
                     key={p.id}
                     className="flex justify-between items-center p-2.5 rounded-xl bg-white border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-[#4F9DA6] border border-black animate-pulse"></span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl p-1 bg-gray-50 border border-black rounded-lg shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center w-8 h-8">
+                        {p.avatar || "👤"}
+                      </span>
                       <span className="text-sm font-black text-black">{p.name}</span>
                     </div>
                     {p.id === roomState.hostId && (
@@ -1900,9 +1935,15 @@ export default function App() {
               
               {/* My active card - The card I hold (Placed on my forehead/under chin facing outward) */}
               <div className="flex-1 flex flex-col items-center justify-center p-4 bg-white border-4 border-black rounded-3xl relative overflow-hidden text-center shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
-                <div className="absolute top-3 left-3 bg-[#FF8E9E] px-2.5 py-0.5 rounded-md border-2 border-black text-[9px] font-black uppercase text-black">
-                  {lang === "en" ? "Your Card" : "بطاقتك الحالية"}
-                </div>
+                {(() => {
+                  const myPlayerObj = roomState.players.find((p: any) => p.id === playerId);
+                  return (
+                    <div className="absolute top-3 left-3 bg-[#FF8E9E] px-2.5 py-0.5 rounded-md border-2 border-black text-[9px] font-black uppercase text-black flex items-center gap-1.5 shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]">
+                      <span className="text-xs">{myPlayerObj?.avatar || "👤"}</span>
+                      <span>{lang === "en" ? "Your Card" : "بطاقتك الحالية"}</span>
+                    </div>
+                  );
+                })()}
 
                 {/* Hold device instruction */}
                 <p className="text-[10px] text-black font-black max-w-xs mb-3 uppercase tracking-wider animate-pulse-slow">
@@ -1978,9 +2019,12 @@ export default function App() {
                           className="p-3 rounded-2xl bg-white border-2 border-black flex items-center justify-between shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] mb-2"
                         >
                           <div className="text-left rtl:text-right flex-1">
-                            <span className="text-[10px] text-[#4F9DA6] font-black block mb-0.5 uppercase tracking-tight">
-                              {otherPlayer.name} ({t.score}: {otherPlayer.score})
-                            </span>
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className="text-lg">{otherPlayer.avatar || "👤"}</span>
+                              <span className="text-[10px] text-[#4F9DA6] font-black block uppercase tracking-tight font-black">
+                                {otherPlayer.name} ({t.score}: {otherPlayer.score})
+                              </span>
+                            </div>
                             {otherItem ? (
                               <div className="flex items-center gap-2">
                                 {otherItem.imageUrl ? (
@@ -2076,6 +2120,7 @@ export default function App() {
                       <div key={p.id} className="flex justify-between items-center py-1.5 text-sm font-bold text-black border-b border-black/5 last:border-none">
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-black text-[#4F9DA6] w-4">#{idx + 1}</span>
+                          <span className="text-lg">{p.avatar || "👤"}</span>
                           <span className="font-black text-black">{p.name}</span>
                         </div>
                         <span className="font-mono text-black font-black text-sm">{p.score} pt</span>

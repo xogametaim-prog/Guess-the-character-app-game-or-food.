@@ -6,6 +6,7 @@ import { CATEGORIES } from "./src/data/categories.js";
 interface Player {
   id: string;
   name: string;
+  avatar?: string;
   score: number;
   currentItemId: string | null;
   history: { itemId: string; guessed: boolean }[];
@@ -65,7 +66,7 @@ function getRandomItem(categoryId: string, excludeIds: string[] = []): string {
 
 // API: Create a room
 app.post("/api/rooms/create", (req, res) => {
-  const { hostName, category, language, timerDuration, customCode } = req.body;
+  const { hostName, avatar, category, language, timerDuration, customCode } = req.body;
   
   let code = "";
   if (customCode && String(customCode).trim()) {
@@ -87,6 +88,7 @@ app.post("/api/rooms/create", (req, res) => {
       {
         id: hostId,
         name: hostName || "Host",
+        avatar: avatar || "👑",
         score: 0,
         currentItemId: null,
         history: [],
@@ -105,7 +107,7 @@ app.post("/api/rooms/create", (req, res) => {
 
 // API: Join a room
 app.post("/api/rooms/join", (req, res) => {
-  const { code, name } = req.body;
+  const { code, name, avatar } = req.body;
   const cleanCode = String(code).trim().toUpperCase();
   const room = rooms[cleanCode];
 
@@ -125,6 +127,7 @@ app.post("/api/rooms/join", (req, res) => {
   const newPlayer: Player = {
     id: playerId,
     name: name || `Player ${room.players.length + 1}`,
+    avatar: avatar || "🤠",
     score: 0,
     currentItemId: null,
     history: [],
