@@ -34,7 +34,7 @@ import { TRANSLATIONS, Translations } from "./data/translations.js";
 import { AmbientSynthesizer } from "./utils/music.js";
 
 // Synthesized sound feedback engine using Web Audio API
-function playAudioTone(type: "correct" | "pass" | "countdown" | "gameover") {
+function playAudioTone(type: "correct" | "pass" | "countdown" | "gameover" | "hint") {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -73,9 +73,37 @@ function playAudioTone(type: "correct" | "pass" | "countdown" | "gameover") {
       gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
       osc.start();
       osc.stop(ctx.currentTime + 0.4);
+    } else if (type === "hint") {
+      // Sparkling rising notes for hint reveal
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(392.00, ctx.currentTime); // G4
+      osc.frequency.setValueAtTime(493.88, ctx.currentTime + 0.08); // B4
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime + 0.16); // D5
+      osc.frequency.setValueAtTime(783.99, ctx.currentTime + 0.24); // G5
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.4);
     }
   } catch (e) {
     // AudioContext blocked or not supported
+  }
+}
+
+// Provide haptic vibration feedback for supported devices
+function triggerHapticFeedback(type: "correct" | "pass" | "hint") {
+  if (typeof window !== "undefined" && window.navigator && typeof window.navigator.vibrate === "function") {
+    try {
+      if (type === "correct") {
+        window.navigator.vibrate([80, 50, 80]);
+      } else if (type === "pass") {
+        window.navigator.vibrate(150);
+      } else if (type === "hint") {
+        window.navigator.vibrate(50);
+      }
+    } catch (e) {
+      // Fail silently
+    }
   }
 }
 
@@ -235,9 +263,12 @@ export default function App() {
 
   const activeCategory = CATEGORIES.find((c) => c.id === selectedCategory) || CATEGORIES[0];
 
-  // Helper to trigger audio
-  const triggerAudio = (type: "correct" | "pass" | "countdown" | "gameover") => {
+  // Helper to trigger audio and haptic feedback
+  const triggerAudio = (type: "correct" | "pass" | "countdown" | "gameover" | "hint") => {
     if (soundEnabled) playAudioTone(type);
+    if (type === "correct" || type === "pass" || type === "hint") {
+      triggerHapticFeedback(type);
+    }
   };
 
   // Copy Room Code Helper
@@ -1249,10 +1280,19 @@ export default function App() {
                   {/* Decorative background grid */}
                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000003_1px,transparent_1px),linear-gradient(to_bottom,#00000003_1px,transparent_1px)] bg-[size:16px_16px]"></div>
 
-                  {/* Gigantic Card Emoji */}
-                  <span className="text-9xl mb-4 relative z-10 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
-                    {foreheadItems[foreheadIndex].emoji}
-                  </span>
+                  {/* Gigantic Card Emoji or Image */}
+                  {foreheadItems[foreheadIndex].imageUrl ? (
+                    <img 
+                      src={foreheadItems[foreheadIndex].imageUrl}
+                      alt={lang === "en" ? foreheadItems[foreheadIndex].nameEn : foreheadItems[foreheadIndex].nameAr}
+                      referrerPolicy="no-referrer"
+                      className="w-28 h-28 md:w-32 md:h-32 object-cover rounded-2xl border-4 border-black mb-4 relative z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
+                    />
+                  ) : (
+                    <span className="text-9xl mb-4 relative z-10 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                      {foreheadItems[foreheadIndex].emoji}
+                    </span>
+                  )}
 
                   {/* Card Name */}
                   <h2 className="text-5xl md:text-6xl font-black text-black relative z-10 tracking-tight uppercase leading-none select-none">
@@ -1281,6 +1321,7 @@ export default function App() {
                               if (foreheadHintsLeft > 0) {
                                 setHintsUsed((prev) => prev + 1);
                                 setForeheadHintRevealed(true);
+                                triggerAudio("hint");
                               }
                             }}
                             disabled={foreheadHintsLeft <= 0}
@@ -1355,6 +1396,7 @@ export default function App() {
                         if (p1HintsLeft > 0) {
                           setVP1HintsUsed((prev) => prev + 1);
                           setVP1HintRevealed(true);
+                          triggerAudio("hint");
                         }
                       }}
                       disabled={Math.max(0, getHintLimit() - vP1HintsUsed) <= 0}
@@ -1380,9 +1422,18 @@ export default function App() {
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center p-4 bg-white rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-xs w-full">
                     {/* Player 1 sees Player 2's Card! */}
-                    <span className="text-5xl block filter drop-shadow-md mb-2">
-                      {vPlayer2Item?.emoji}
-                    </span>
+                    {vPlayer2Item?.imageUrl ? (
+                      <img 
+                        src={vPlayer2Item.imageUrl}
+                        alt={lang === "en" ? vPlayer2Item.nameEn : vPlayer2Item.nameAr}
+                        referrerPolicy="no-referrer"
+                        className="w-20 h-20 object-cover mx-auto rounded-xl border-2 border-black mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      />
+                    ) : (
+                      <span className="text-5xl block filter drop-shadow-md mb-2">
+                        {vPlayer2Item?.emoji}
+                      </span>
+                    )}
                     <h4 className="text-xl font-black text-black uppercase">
                       {lang === "en" ? vPlayer2Item?.nameEn : vPlayer2Item?.nameAr}
                     </h4>
@@ -1466,6 +1517,7 @@ export default function App() {
                         if (p2HintsLeft > 0) {
                           setVP2HintsUsed((prev) => prev + 1);
                           setVP2HintRevealed(true);
+                          triggerAudio("hint");
                         }
                       }}
                       disabled={Math.max(0, getHintLimit() - vP2HintsUsed) <= 0}
@@ -1491,9 +1543,18 @@ export default function App() {
                 <div className="flex-1 flex items-center justify-center">
                   <div className="text-center p-4 bg-white rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-w-xs w-full">
                     {/* Player 2 sees Player 1's Card! */}
-                    <span className="text-5xl block filter drop-shadow-md mb-2">
-                      {vPlayer1Item?.emoji}
-                    </span>
+                    {vPlayer1Item?.imageUrl ? (
+                      <img 
+                        src={vPlayer1Item.imageUrl}
+                        alt={lang === "en" ? vPlayer1Item.nameEn : vPlayer1Item.nameAr}
+                        referrerPolicy="no-referrer"
+                        className="w-20 h-20 object-cover mx-auto rounded-xl border-2 border-black mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                      />
+                    ) : (
+                      <span className="text-5xl block filter drop-shadow-md mb-2">
+                        {vPlayer1Item?.emoji}
+                      </span>
+                    )}
                     <h4 className="text-xl font-black text-black uppercase">
                       {lang === "en" ? vPlayer1Item?.nameEn : vPlayer1Item?.nameAr}
                     </h4>
@@ -1862,9 +1923,18 @@ export default function App() {
                       animate={{ scale: 1 }}
                       className="flex flex-col items-center"
                     >
-                      <span className="text-8xl md:text-9xl my-2 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
-                        {myItem.emoji}
-                      </span>
+                      {myItem.imageUrl ? (
+                        <img 
+                          src={myItem.imageUrl}
+                          alt={lang === "en" ? myItem.nameEn : myItem.nameAr}
+                          referrerPolicy="no-referrer"
+                          className="w-24 h-24 md:w-28 md:h-28 object-cover rounded-xl border-2 border-black mb-2 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                        />
+                      ) : (
+                        <span className="text-8xl md:text-9xl my-2 filter drop-shadow-[4px_4px_0px_rgba(0,0,0,0.1)]">
+                          {myItem.emoji}
+                        </span>
+                      )}
                       <h2 className="text-4xl md:text-5xl font-black text-black tracking-tight uppercase">
                         {lang === "en" ? myItem.nameEn : myItem.nameAr}
                       </h2>
@@ -1913,7 +1983,16 @@ export default function App() {
                             </span>
                             {otherItem ? (
                               <div className="flex items-center gap-2">
-                                <span className="text-2xl">{otherItem.emoji}</span>
+                                {otherItem.imageUrl ? (
+                                  <img 
+                                    src={otherItem.imageUrl}
+                                    alt={lang === "en" ? otherItem.nameEn : otherItem.nameAr}
+                                    referrerPolicy="no-referrer"
+                                    className="w-10 h-10 object-cover rounded-lg border-2 border-black shadow-[1px_1px_0px_0px_rgba(0,0,0,1)]"
+                                  />
+                                ) : (
+                                  <span className="text-2xl">{otherItem.emoji}</span>
+                                )}
                                 <div>
                                   <p className="text-sm font-black text-black uppercase">
                                     {lang === "en" ? otherItem.nameEn : otherItem.nameAr}

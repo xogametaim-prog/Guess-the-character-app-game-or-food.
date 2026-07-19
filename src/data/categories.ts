@@ -5,6 +5,7 @@ export interface GameItem {
   emoji: string;
   hintEn: string;
   hintAr: string;
+  imageUrl?: string;
 }
 
 export interface Category {
@@ -419,6 +420,63 @@ export const CATEGORIES: Category[] = [
       { id: "ap8", nameEn: "Google", nameAr: "جوجل", emoji: "🔍", hintEn: "The world's absolute entry point for search and questions", hintAr: "محرك البحث الأكبر والمدخل الرئيسي لكل الأسئلة في الإنترنت" },
       { id: "ap9", nameEn: "Netflix", nameAr: "نتفليكس", emoji: "🍿", hintEn: "Streaming service with original movies and shows starting with an N", hintAr: "خدمة بث الأفلام والمسلسلات الأصلية الشهيرة التي تبدأ بحرف N" },
       { id: "ap10", nameEn: "Spotify", nameAr: "سبوتيفاي", emoji: "🎵", hintEn: "Green music, podcast, and playlist streaming app", hintAr: "تطبيق بث الموسيقى والبودكاست الأخضر ذو القوائم المتنوعة" }
+    ]
+  },
+  {
+    id: "girls",
+    nameEn: "Girls",
+    nameAr: "بنات",
+    icon: "👧",
+    color: "from-pink-400 to-rose-500",
+    items: [
+      { id: "g1", nameEn: "Yasmin", nameAr: "ياسمين", emoji: "👧", hintEn: "A girl with a beautiful smile and natural look", hintAr: "فتاة بابتسامة جميلة ومظهر طبيعي", imageUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g2", nameEn: "Lina", nameAr: "لينا", emoji: "👩", hintEn: "Very energetic and laughing", hintAr: "فتاة مليئة بالطاقة وتضحك", imageUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g3", nameEn: "Mariam", nameAr: "مريم", emoji: "👩‍🦱", hintEn: "Classic elegance with curly hair", hintAr: "مظهر كلاسيكي أنيق بشعر مموج", imageUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g4", nameEn: "Sarah", nameAr: "سارة", emoji: "👓", hintEn: "Friendly look with glasses", hintAr: "مظهر ودود وترتدي نظارة", imageUrl: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g5", nameEn: "Fatima", nameAr: "فاطمة", emoji: "🧕", hintEn: "Wise and serene look", hintAr: "مظهر هادئ وحكيم", imageUrl: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g6", nameEn: "Aya", nameAr: "آية", emoji: "👒", hintEn: "Modern look with a sun hat", hintAr: "مظهر عصري بقبعة شمسية", imageUrl: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g7", nameEn: "Nour", nameAr: "نور", emoji: "✨", hintEn: "Radiant and expressive face", hintAr: "وجه معبر ومشرق", imageUrl: "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g8", nameEn: "Salma", nameAr: "سلمى", emoji: "🌸", hintEn: "Gentle and warm smile", hintAr: "ابتسامة دافئة ولطيفة", imageUrl: "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g9", nameEn: "Hana", nameAr: "هنا", emoji: "🎓", hintEn: "Intelligent looking student girl", hintAr: "طالبة ذكية المظهر", imageUrl: "https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "g10", nameEn: "Jude", nameAr: "جود", emoji: "💖", hintEn: "Cheerful girl with curly hair", hintAr: "فتاة مرحة بشعر مموج", imageUrl: "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=300&h=300&q=80" }
+    ]
+  },
+  {
+    id: "boys",
+    nameEn: "Boys",
+    nameAr: "أولاد",
+    icon: "👦",
+    color: "from-blue-400 to-cyan-500",
+    items: [
+      { id: "b1", nameEn: "Youssef", nameAr: "يوسف", emoji: "👦", hintEn: "Cheerful guy with a broad smile", hintAr: "شاب مرح بابتسامة عريضة", imageUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b2", nameEn: "Adam", nameAr: "آدم", emoji: "👨", hintEn: "Clean look, warm eyes", hintAr: "مظهر نظيف وعينان دافئتان", imageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b3", nameEn: "Omar", nameAr: "عمر", emoji: "🙋‍♂️", hintEn: "Casual smart student style", hintAr: "أسلوب طالب كاجوال ذكي", imageUrl: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b4", nameEn: "Ali", nameAr: "علي", emoji: "😎", hintEn: "Strong and calm expressions", hintAr: "ملامح هادئة وقوية", imageUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b5", nameEn: "Khaled", nameAr: "خالد", emoji: "💼", hintEn: "Professional smart looking man", hintAr: "رجل بمظهر مهني وذكي", imageUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b6", nameEn: "Ahmad", nameAr: "أحمد", emoji: "🏃‍♂️", hintEn: "Sporty guy with a friendly grin", hintAr: "شاب رياضي بابتسامة ودودة", imageUrl: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b7", nameEn: "Zain", nameAr: "زين", emoji: "🕺", hintEn: "Stylish cool look", hintAr: "مظهر أنيق وجذاب", imageUrl: "https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b8", nameEn: "Kareem", nameAr: "كريم", emoji: "🏠", hintEn: "Friendly guy next door", hintAr: "شاب لطيف مألوف", imageUrl: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b9", nameEn: "Hamza", nameAr: "حمزة", emoji: "💻", hintEn: "Confident tech developer look", hintAr: "مظهر مطور تقني واثق", imageUrl: "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "b10", nameEn: "Ryan", nameAr: "ريان", emoji: "🍃", hintEn: "Kind and relaxed guy", hintAr: "شاب طيب ومسترخٍ", imageUrl: "https://images.unsplash.com/photo-1489980508314-941910ded1f4?auto=format&fit=crop&w=300&h=300&q=80" }
+    ]
+  },
+  {
+    id: "random_food",
+    nameEn: "Random Food",
+    nameAr: "أطعمة منوعة",
+    icon: "🍕",
+    color: "from-amber-400 to-orange-500",
+    items: [
+      { id: "rf1", nameEn: "Pizza", nameAr: "بيتزا", emoji: "🍕", hintEn: "Italian slice with cheese and toppings", hintAr: "شريحة إيطالية بالجبن والمكونات الشهية", imageUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf2", nameEn: "Burger", nameAr: "برجر", emoji: "🍔", hintEn: "Juicy beef patty with cheese in a bun", hintAr: "شريحة لحم شهية مع الجبن في خبز دائري", imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf3", nameEn: "Sushi", nameAr: "سوشي", emoji: "🍣", hintEn: "Japanese rolls with fish and seaweed", hintAr: "لفائف يابانية بالسمك والأعشاب البحرية", imageUrl: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf4", nameEn: "Donut", nameAr: "دونات", emoji: "🍩", hintEn: "Glazed sweet dough with a hole", hintAr: "عجين حلو مغطى بالكريمة به ثقب بالمنتصف", imageUrl: "https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf5", nameEn: "Ice Cream", nameAr: "آيس كريم", emoji: "🍦", hintEn: "Cold sweet scoop on a hot summer day", hintAr: "كرة حلوة باردة في يوم صيف حار", imageUrl: "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf6", nameEn: "Pasta", nameAr: "معكرونة", emoji: "🍝", hintEn: "Delicious noodles with tomato sauce and herbs", hintAr: "معكرونة شهية بصلصة الطماطم والأعشاب", imageUrl: "https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf7", nameEn: "Taco", nameAr: "تاكو", emoji: "🌮", hintEn: "Folded Mexican shell with savory filling", hintAr: "رقاقة مكسيكية مطوية بحشوة لذيذة", imageUrl: "https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf8", nameEn: "French Fries", nameAr: "بطاطس مقلية", emoji: "🍟", hintEn: "Crispy salted golden potato fingers", hintAr: "أصابع بطاطس ذهبية مملحة ومقرمشة", imageUrl: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf9", nameEn: "Pancakes", nameAr: "بان كيك", emoji: "🥞", hintEn: "Fluffy hot cakes with syrup and berries", hintAr: "كعك ساخن رقيق مع العسل والتوت", imageUrl: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=300&h=300&q=80" },
+      { id: "rf10", nameEn: "Strawberry Cake", nameAr: "كعكة الفراولة", emoji: "🍰", hintEn: "Dreamy pink cake topped with strawberries", hintAr: "كعكة وردية حالمة مزينة بالفراولة", imageUrl: "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=300&h=300&q=80" }
     ]
   }
 ];
